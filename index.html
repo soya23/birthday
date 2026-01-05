@@ -1,0 +1,1040 @@
+﻿<!doctype html>
+<html lang="ja">
+<head>
+    <script>
+      // どんな場合でも必ずhome.htmlへリダイレクト
+      if (!location.pathname.endsWith('home.html')) {
+        location.replace('home.html');
+      }
+    </script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Uta 20 — Starlight Catch</title>
+  <style>
+    :root{
+      --bg0:#070A12;
+      --bg1:#0B1020;
+      --bg2:#121A35;
+      --glass: rgba(255,255,255,.08);
+      --glass2: rgba(255,255,255,.12);
+      --stroke: rgba(255,255,255,.16);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.70);
+      --accent: #EED9A6;
+      --paper: rgba(255,255,255,.92);
+      --ink: rgba(15,18,30,.92);
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; margin:0; color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic", sans-serif; }
+    body{
+      background:
+        radial-gradient(1200px 900px at 20% 20%, rgba(120,140,255,.18), transparent 55%),
+        radial-gradient(1000px 700px at 80% 10%, rgba(238,217,166,.12), transparent 55%),
+        radial-gradient(900px 700px at 60% 90%, rgba(140,255,210,.10), transparent 60%),
+        linear-gradient(180deg, var(--bg2), var(--bg0));
+      overflow:hidden;
+    }
+    body::before{
+      content:"";
+      position:fixed; inset:0;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E");
+      mix-blend-mode: overlay;
+      opacity:.25;
+      pointer-events:none;
+    }
+
+    .topbar{
+      position:fixed; left:0; right:0; top:0;
+      padding:12px 14px 10px;
+      display:flex; justify-content:center; gap:10px; align-items:center;
+      pointer-events:none;
+    }
+    .pill{
+      pointer-events:none;
+      padding:9px 12px;
+      border-radius:999px;
+      background:var(--glass);
+      border:1px solid var(--stroke);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      font-weight:700;
+      letter-spacing:.2px;
+    }
+    .pill small{ opacity:.75; font-weight:600; }
+
+    canvas{
+      position:fixed; inset:0;
+      width:100vw; height:100vh;
+      display:block;
+      touch-action:manipulation;
+    }
+
+    .controls{
+      position:fixed; left:0; right:0; bottom:14px;
+      display:flex; justify-content:center; gap:10px; align-items:center;
+      padding:0 12px;
+      flex-wrap:wrap;
+    }
+    button{
+      border:1px solid var(--stroke);
+      background:linear-gradient(180deg, var(--glass2), var(--glass));
+      color:var(--text);
+      padding:11px 14px;
+      border-radius:14px;
+      font-weight:800;
+      cursor:pointer;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    button:active{ transform: translateY(1px); }
+    button[disabled]{ opacity:.55; cursor:not-allowed; }
+    .hint{
+      position:fixed; left:0; right:0; bottom:74px;
+      text-align:center;
+      font-size:12px;
+      color:var(--muted);
+      text-shadow:0 8px 24px rgba(0,0,0,.55);
+      padding:0 10px;
+    }
+
+    .overlay{
+      position:fixed; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(0,0,0,.55);
+      backdrop-filter: blur(10px);
+    }
+    .card{
+      width:min(620px, 92vw);
+      border-radius:22px;
+      padding:18px 18px 16px;
+      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow:0 30px 120px rgba(0,0,0,.60);
+    }
+    .headline{
+      margin:0 0 8px;
+      font-size:26px;
+      letter-spacing:.5px;
+      line-height:1.15;
+    }
+    .sub{
+      margin:0 0 14px;
+      color:var(--muted);
+      line-height:1.7;
+      font-size:14px;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      background:rgba(238,217,166,.10);
+      border:1px solid rgba(238,217,166,.22);
+      color:rgba(255,255,255,.92);
+      font-weight:800;
+      margin-bottom:10px;
+    }
+    .badge span{ color:var(--accent); }
+    .row{
+      display:flex; flex-wrap:wrap; gap:10px;
+      margin-top:12px;
+    }
+    .fineprint{
+      margin-top:10px;
+      font-size:12px;
+      color:rgba(255,255,255,.62);
+      line-height:1.6;
+    }
+    .k{ color:var(--accent); font-weight:800; }
+
+    /* =========================
+       Envelope / Letter animation
+       ========================= */
+    .envelopeWrap{
+      margin:14px auto 4px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .envelopeHint{
+      text-align:center;
+      color:rgba(255,255,255,.72);
+      font-size:12px;
+      margin-top:8px;
+    }
+    .envelope{
+      position:relative;
+      width:min(420px, 82vw);
+      aspect-ratio: 3 / 2;
+      transform: translateZ(0);
+      cursor:pointer;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      filter: drop-shadow(0 22px 60px rgba(0,0,0,.55));
+    }
+    .envBody{
+      position:absolute; inset:0;
+      border-radius:18px;
+      background: linear-gradient(180deg, rgba(255,255,255,.15), rgba(255,255,255,.07));
+      border:1px solid rgba(255,255,255,.18);
+      overflow:hidden;
+      backdrop-filter: blur(10px);
+    }
+    .envInnerGlow{
+      position:absolute; inset:-40%;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(238,217,166,.26), transparent 55%),
+        radial-gradient(circle at 70% 65%, rgba(210,230,255,.22), transparent 55%);
+      opacity:.7;
+      transform: rotate(8deg);
+      pointer-events:none;
+    }
+    .envTriLeft, .envTriRight, .envTriBottom{
+      position:absolute; inset:0;
+      pointer-events:none;
+      opacity:.95;
+    }
+    /* side folds */
+    .envTriLeft{
+      clip-path: polygon(0 0, 55% 50%, 0 100%);
+      background: linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,.04));
+    }
+    .envTriRight{
+      clip-path: polygon(100% 0, 45% 50%, 100% 100%);
+      background: linear-gradient(225deg, rgba(255,255,255,.18), rgba(255,255,255,.04));
+    }
+    /* bottom fold */
+    .envTriBottom{
+      clip-path: polygon(0 100%, 50% 46%, 100% 100%);
+      background: linear-gradient(0deg, rgba(255,255,255,.16), rgba(255,255,255,.03));
+    }
+
+    /* flap */
+    .flap{
+      position:absolute;
+      left:0; right:0;
+      top:0;
+      height:55%;
+      transform-origin: 50% 0%;
+      clip-path: polygon(0 0, 50% 92%, 100% 0);
+      background: linear-gradient(180deg, rgba(255,255,255,.20), rgba(255,255,255,.06));
+      border-top-left-radius:18px;
+      border-top-right-radius:18px;
+      border:1px solid rgba(255,255,255,.16);
+      border-bottom:0;
+      box-shadow: 0 8px 24px rgba(0,0,0,.22);
+      transition: transform 900ms cubic-bezier(.18,.9,.18,1), opacity 500ms ease;
+      z-index: 5;
+    }
+
+    /* seal */
+    .seal{
+      position:absolute;
+      left:50%; top:46%;
+      width:54px; height:54px;
+      transform: translate(-50%,-50%);
+      border-radius:999px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.22), transparent 45%),
+        radial-gradient(circle at 70% 75%, rgba(0,0,0,.20), transparent 55%),
+        linear-gradient(180deg, rgba(238,217,166,.95), rgba(190,160,95,.95));
+      border:1px solid rgba(255,255,255,.24);
+      box-shadow: 0 10px 26px rgba(0,0,0,.35);
+      z-index: 6;
+      transition: transform 550ms cubic-bezier(.18,.9,.18,1), opacity 350ms ease;
+    }
+    .seal::after{
+      content:"U";
+      position:absolute; inset:0;
+      display:grid; place-items:center;
+      font-weight:900;
+      color: rgba(10,12,18,.70);
+      letter-spacing:.5px;
+    }
+
+    /* letter */
+    .letter{
+      position:absolute;
+      left:50%;
+      bottom:10%;
+      width:86%;
+      height:86%;
+      transform: translateX(-50%) translateY(26%);
+      border-radius:16px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.88));
+      border:1px solid rgba(0,0,0,.08);
+      box-shadow: 0 12px 40px rgba(0,0,0,.32);
+      overflow:hidden;
+      z-index: 2;
+      opacity: 0;
+      transition:
+        transform 980ms cubic-bezier(.18,.9,.18,1),
+        opacity 420ms ease;
+    }
+    .letter::before{
+      /* subtle paper texture */
+      content:"";
+      position:absolute; inset:0;
+      background:
+        radial-gradient(800px 300px at 20% 15%, rgba(238,217,166,.18), transparent 60%),
+        radial-gradient(700px 320px at 80% 55%, rgba(210,230,255,.12), transparent 60%);
+      opacity:.55;
+      pointer-events:none;
+    }
+    .letterContent{
+      position:absolute; inset:0;
+      padding:18px 16px 16px;
+      color: var(--ink);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .letterTop{
+      display:flex; align-items:baseline; justify-content:space-between;
+      gap:10px;
+    }
+    .letterTop .to{
+      font-weight:900;
+      letter-spacing:.3px;
+    }
+    .letterTop .stamp{
+      font-size:12px;
+      color: rgba(15,18,30,.56);
+      border:1px solid rgba(15,18,30,.16);
+      padding:6px 10px;
+      border-radius:999px;
+    }
+    .letterMsg{
+      white-space:pre-wrap;
+      line-height:1.85;
+      font-size:14px;
+      color: rgba(15,18,30,.90);
+    }
+    .letterSig{
+      margin-top:auto;
+      text-align:right;
+      font-size:13px;
+      color: rgba(15,18,30,.70);
+    }
+
+    /* Open state */
+    .envelope.open .flap{
+      transform: rotateX(180deg);
+      opacity:.85;
+    }
+    .envelope.open .seal{
+      transform: translate(-50%,-50%) scale(0.92);
+      opacity:0;
+      pointer-events:none;
+    }
+    .envelope.open .letter{
+      opacity:1;
+      transform: translateX(-50%) translateY(-6%);
+    }
+
+    /* little idle float */
+    @keyframes floaty{
+      0%,100%{ transform: translateY(0px); }
+      50%{ transform: translateY(-6px); }
+    }
+    .envelope.idle{ animation: floaty 3.6s ease-in-out infinite; }
+
+    /* Overlay close button (tiny) */
+    .xRow{
+      display:flex; justify-content:space-between; align-items:center;
+      margin-bottom:6px;
+    }
+    .miniBtn{
+      padding:8px 10px;
+      border-radius:12px;
+      font-weight:900;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="pill" id="hudLeft">Uta · 20</div>
+    <div class="pill" id="hudMid">Score: 0</div>
+    <div class="pill" id="hudRight"><small>Goal</small> 20</div>
+  </div>
+
+  <canvas id="c" aria-label="birthday game"></canvas>
+
+  <div class="hint">PC: ← → / A D　｜　スマホ: 画面の左右タップ</div>
+  <div class="controls">
+    <button id="btnStart">▶︎ START</button>
+    <button id="btnPause" disabled>⏸️ PAUSE</button>
+    <button id="btnSound">🔈 SOUND: ON</button>
+    <button id="btnRestart" disabled>↻ RESTART</button>
+  </div>
+
+  <div class="overlay" id="overlay" style="display:none;">
+    <div class="card" id="card">
+      <div class="xRow">
+        <div class="badge">🎂 <span id="who">うた</span> <span id="age">20</span></div>
+        <button class="miniBtn" id="btnCloseOverlay" style="display:none;">✕</button>
+      </div>
+
+      <h1 class="headline" id="title">Starlight Catch</h1>
+      <p class="sub" id="desc">
+        光を集めて、<span class="k">20</span>に到達すると「封筒」が届きます。<br/>
+        封筒をタップすると、手紙が開きます。
+      </p>
+
+      <div class="envelopeWrap">
+        <div class="envelope idle" id="envelope" role="button" aria-label="open letter">
+          <div class="envBody">
+            <div class="envInnerGlow"></div>
+            <div class="envTriLeft"></div>
+            <div class="envTriRight"></div>
+            <div class="envTriBottom"></div>
+          </div>
+
+          <div class="letter" id="letter">
+            <div class="letterContent">
+              <div class="letterTop">
+                <div class="to" id="letterTo">To: うた</div>
+                <div class="stamp" id="letterStamp">Happy 20</div>
+              </div>
+              <div class="letterMsg" id="letterMsg"></div>
+              <div class="letterSig" id="letterSig">— from</div>
+            </div>
+          </div>
+
+          <div class="flap"></div>
+          <div class="seal" title="seal"></div>
+        </div>
+      </div>
+      <div class="envelopeHint" id="envelopeHint">▶︎ はじめる を押してスタート</div>
+
+      <div class="row">
+        <button id="btnPlay" style="flex:1; min-width:180px;">▶︎ はじめる</button>
+        <button id="btnHow" style="min-width:160px;">？ 遊び方</button>
+      </div>
+
+      <div class="fineprint" id="fp">
+        操作：PCは ← → / A D、スマホは画面左右をタップ。<br/>
+        ※ 音が出ない場合は SOUND をOFF→ONしてみてください。
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // =========================
+  // 画像プリロード
+  // =========================
+  const IMAGE_COUNT = 30; // 画像の枚数
+  const IMAGE_PATHS = Array.from({length: IMAGE_COUNT}, (_,i)=>`images/photo${i+1}.jpg`);
+  const IMAGES = [];
+  let imagesLoaded = 0;
+  for(let i=0;i<IMAGE_COUNT;i++){
+    const img = new window.Image();
+    img.src = IMAGE_PATHS[i];
+    img.onload = ()=>{ imagesLoaded++; };
+    IMAGES.push(img);
+  }
+  // =========================
+  // 設定（ここだけ変えればOK）
+  // =========================
+  const SETTINGS = {
+    name: "うた",
+    age: 20,
+    goal: 20,
+    message:
+  `うた、20歳おめでとう。
+  約一年間うたと過ごして自分の世界が広がりました。たまに怒ったりイライラしてたりするけどよろしくお願いします。`,
+    signature: "そうやより",
+
+    // difficulty
+    spawnBaseMs: 560,
+    spawnMinMs: 360,
+    fallMin: 160,      // px/sec
+    fallMax: 310,      // px/sec
+    drift: 26,
+    playerAccel: 2200, // px/sec^2
+    playerMaxV: 520,   // px/sec
+  };
+
+  // DOM
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+
+  const overlay = document.getElementById("overlay");
+  const card = document.getElementById("card");
+
+  const who = document.getElementById("who");
+  const age = document.getElementById("age");
+  const hudLeft = document.getElementById("hudLeft");
+  const hudMid = document.getElementById("hudMid");
+  const hudRight = document.getElementById("hudRight");
+
+  const title = document.getElementById("title");
+  const desc = document.getElementById("desc");
+  const fp = document.getElementById("fp");
+  const envelopeHint = document.getElementById("envelopeHint");
+
+  const btnStart = document.getElementById("btnStart");
+  const btnPause = document.getElementById("btnPause");
+  const btnSound = document.getElementById("btnSound");
+  const btnRestart = document.getElementById("btnRestart");
+  const btnPlay = document.getElementById("btnPlay");
+  const btnHow = document.getElementById("btnHow");
+  const btnCloseOverlay = document.getElementById("btnCloseOverlay");
+
+  const envelope = document.getElementById("envelope");
+  const letterMsg = document.getElementById("letterMsg");
+  const letterTo = document.getElementById("letterTo");
+  const letterStamp = document.getElementById("letterStamp");
+  const letterSig = document.getElementById("letterSig");
+
+  // Apply settings
+  who.textContent = SETTINGS.name;
+  age.textContent = SETTINGS.age;
+  hudLeft.textContent = `${SETTINGS.name} · ${SETTINGS.age}`;
+  hudRight.innerHTML = `<small>Goal</small> ${SETTINGS.goal}`;
+
+  letterTo.textContent = `To: ${SETTINGS.name}`;
+  letterStamp.textContent = `Happy ${SETTINGS.age}`;
+  letterMsg.textContent = SETTINGS.message;
+  letterSig.textContent = `— ${SETTINGS.signature}`;
+
+  // Utils
+  const clamp = (x,a,b)=>Math.max(a, Math.min(b,x));
+  const lerp = (a,b,t)=>a+(b-a)*t;
+  const rand = (a,b)=>a+Math.random()*(b-a);
+  const nowMs = ()=>performance.now();
+
+  // HiDPI
+  function resize() {
+    const dpr = Math.max(1, Math.min(2.2, window.devicePixelRatio || 1));
+    canvas.width = Math.floor(innerWidth * dpr);
+    canvas.height = Math.floor(innerHeight * dpr);
+    canvas.style.width = innerWidth + "px";
+    canvas.style.height = innerHeight + "px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  addEventListener("resize", resize, {passive:true});
+  resize();
+
+  // Audio (subtle)
+  let audioOn = true;
+  let audioCtx = null;
+  function ensureAudio() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      audioCtx = new AC();
+    }
+    if (audioCtx.state === "suspended") audioCtx.resume().catch(()=>{});
+    return audioCtx;
+  }
+  function blip(freq=660, dur=0.06, gain=0.045) {
+    if (!audioOn) return;
+    const ac = ensureAudio();
+    if (!ac) return;
+    const t = ac.currentTime;
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = "sine";
+    o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(gain, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(ac.destination);
+    o.start(t);
+    o.stop(t + dur + 0.02);
+  }
+  function chime() {
+    blip(740,0.07,0.05);
+    setTimeout(()=>blip(980,0.07,0.04), 60);
+    setTimeout(()=>blip(1240,0.09,0.035), 120);
+  }
+
+  // Game state
+  let running = false;
+  let paused = false;
+  let score = 0;
+
+  // Player
+  const player = {
+    x: innerWidth/2,
+    y: innerHeight - 120,
+    w: 140,
+    h: 18,
+    vx: 0,
+    ax: 0,
+  };
+
+  // Inputs
+  let left=false, right=false;
+  function setMove(dir){ left = dir<0; right = dir>0; }
+
+  addEventListener("keydown", (e)=>{
+    const k = e.key.toLowerCase();
+    if (k==="arrowleft" || k==="a") left=true;
+    if (k==="arrowright" || k==="d") right=true;
+    if (k==="p" && running) togglePause();
+  });
+  addEventListener("keyup", (e)=>{
+    const k = e.key.toLowerCase();
+    if (k==="arrowleft" || k==="a") left=false;
+    if (k==="arrowright" || k==="d") right=false;
+  });
+
+  // Tap left/right
+  canvas.addEventListener("pointerdown", (e)=>{
+    if (!running) return;
+    ensureAudio();
+    const x = e.clientX;
+    if (x < innerWidth/2) setMove(-1);
+    else setMove(+1);
+  }, {passive:true});
+  addEventListener("pointerup", ()=>{ left=false; right=false; }, {passive:true});
+
+  // Falling items
+  let drops = [];
+  let particles = [];
+  let confetti = [];
+
+  let lastT = nowMs();
+  let spawnAt = 0;
+
+  function reset() {
+    score = 0;
+    hudMid.textContent = `Score: ${score}`;
+    drops = [];
+    particles = [];
+    confetti = [];
+    player.x = innerWidth/2;
+    player.vx = 0;
+    player.ax = 0;
+    spawnAt = 0;
+
+    // overlay state
+    envelope.classList.remove("open");
+    envelope.classList.add("idle");
+    btnCloseOverlay.style.display = "none";
+  }
+
+  function spawnDrop(levelT) {
+    const base = lerp(SETTINGS.spawnBaseMs, SETTINGS.spawnMinMs, levelT);
+    // 画像をランダムで選ぶ
+    const imgIdx = Math.floor(rand(0, IMAGES.length));
+    const size = rand(32, 54); // 画像サイズ
+    drops.push({
+      x: rand(26, innerWidth-26),
+      y: -40,
+      r: size,
+      vy: rand(SETTINGS.fallMin, SETTINGS.fallMax) * lerp(1.0, 1.12, levelT),
+      driftPhase: rand(0, Math.PI*2),
+      kind: "image",
+      imgIdx,
+      rot: rand(-1.6, 1.6),
+      a: rand(0, 1),
+      glow: rand(0.6, 1.0),
+      value: 1,
+    });
+    spawnAt = nowMs() + base + rand(-80, 90);
+  }
+
+  function puff(x,y, n=20) {
+    for (let i=0;i<n;i++){
+      particles.push({
+        x,y,
+        vx: rand(-120,120),
+        vy: rand(-220,-60),
+        g: rand(420,700),
+        life: rand(0.55, 0.95),
+        t: 0,
+        s: rand(1.2, 2.6),
+      });
+    }
+  }
+
+  function burstConfetti(x,y, n=140) {
+    for (let i=0;i<n;i++){
+      confetti.push({
+        x,y,
+        vx: rand(-260,260),
+        vy: rand(-520,-160),
+        g: rand(520, 860),
+        life: rand(1.2, 2.4),
+        t: 0,
+        w: rand(4,9),
+        h: rand(3,8),
+        r: rand(0, Math.PI*2),
+        vr: rand(-6,6),
+        c: ["rgba(238,217,166,.95)","rgba(210,230,255,.90)","rgba(210,255,235,.85)","rgba(255,255,255,.85)"][Math.floor(rand(0,4))]
+      });
+    }
+  }
+
+  function drawVignette() {
+    const g = ctx.createRadialGradient(innerWidth/2, innerHeight*0.2, 10, innerWidth/2, innerHeight*0.2, innerWidth*0.85);
+    g.addColorStop(0, "rgba(0,0,0,0)");
+    g.addColorStop(1, "rgba(0,0,0,.55)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,innerWidth,innerHeight);
+  }
+
+  function drawStars(t) {
+    ctx.save();
+    ctx.globalAlpha = 0.22;
+    for (let i=0;i<46;i++){
+      const x = (i*97 + t*12) % innerWidth;
+      const y = (i*53 + t*18) % innerHeight;
+      const a = 0.25 + 0.65*Math.sin((t*0.8)+i)*0.5+0.5;
+      ctx.globalAlpha = 0.06 + a*0.22;
+      ctx.beginPath();
+      ctx.arc(x, y, (i%3)+0.8, 0, Math.PI*2);
+      ctx.fillStyle = "rgba(255,255,255,1)";
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawPlayer() {
+    const x = player.x - player.w/2;
+    const y = player.y - player.h/2;
+
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.beginPath();
+    ctx.ellipse(player.x, player.y + 26, player.w*0.42, 10, 0, 0, Math.PI*2);
+    ctx.fillStyle = "#000";
+    ctx.fill();
+    ctx.restore();
+
+    const rr = 12;
+    ctx.save();
+    ctx.beginPath(); roundRect(x, y, player.w, player.h, rr);
+    ctx.fillStyle = "rgba(255,255,255,.10)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,.16)";
+    ctx.stroke();
+
+    const hg = ctx.createLinearGradient(0, y, 0, y+player.h);
+    hg.addColorStop(0, "rgba(255,255,255,.22)");
+    hg.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.beginPath(); roundRect(x+2, y+2, player.w-4, player.h*0.55, rr-2);
+    ctx.fillStyle = hg;
+    ctx.fill();
+
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = "rgba(238,217,166,.70)";
+    ctx.beginPath();
+    ctx.arc(player.x, player.y + 0.5, 2.3, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function roundRect(x,y,w,h,r){
+    const rr = Math.min(r, w/2, h/2);
+    ctx.moveTo(x+rr,y);
+    ctx.arcTo(x+w,y,x+w,y+h,rr);
+    ctx.arcTo(x+w,y+h,x,y+h,rr);
+    ctx.arcTo(x,y+h,x,y,rr);
+    ctx.arcTo(x,y,x+w,y,rr);
+  }
+
+  function starShape(cx,cy, outer, inner){
+    ctx.beginPath();
+    for(let i=0;i<8;i++){
+      const a = i*(Math.PI/4);
+      const r = (i%2===0) ? outer : inner;
+      const x = cx + Math.cos(a)*r;
+      const y = cy + Math.sin(a)*r;
+      if(i===0) ctx.moveTo(x,y);
+      else ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+  }
+
+  function drawDrop(d, time) {
+    const sway = Math.sin(time*0.002 + d.driftPhase) * SETTINGS.drift;
+    const x = d.x + sway;
+    const y = d.y;
+
+    ctx.save();
+    ctx.globalAlpha = 0.22 * d.glow;
+    ctx.beginPath();
+    ctx.arc(x, y, d.r*1.2, 0, Math.PI*2);
+    ctx.fillStyle = "rgba(238,217,166,1)";
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(d.rot * 0.12);
+
+    if (d.kind === "image" && IMAGES[d.imgIdx] && IMAGES[d.imgIdx].complete) {
+      ctx.globalAlpha = 0.98;
+      ctx.drawImage(IMAGES[d.imgIdx], -d.r, -d.r, d.r*2, d.r*2);
+    }
+    ctx.restore();
+  }
+
+  function drawParticles() {
+    for (const p of particles) {
+      const k = 1 - (p.t / p.life);
+      ctx.save();
+      ctx.globalAlpha = 0.20 * k;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 6*p.s*k, 0, Math.PI*2);
+      ctx.fillStyle = "rgba(238,217,166,1)";
+      ctx.fill();
+
+      ctx.globalAlpha = 0.55 * k;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2.2*p.s*k, 0, Math.PI*2);
+      ctx.fillStyle = "rgba(255,255,255,1)";
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function drawConfetti() {
+    for (const c of confetti) {
+      const k = 1 - (c.t / c.life);
+      ctx.save();
+      ctx.translate(c.x, c.y);
+      ctx.rotate(c.r);
+      ctx.globalAlpha = 0.95 * k;
+      ctx.fillStyle = c.c;
+      ctx.fillRect(-c.w/2, -c.h/2, c.w, c.h);
+      ctx.restore();
+    }
+  }
+
+  function update(dt, time) {
+    const levelT = clamp(score / SETTINGS.goal, 0, 1);
+
+    if (time > spawnAt) spawnDrop(levelT);
+
+    player.ax = 0;
+    if (left) player.ax -= SETTINGS.playerAccel;
+    if (right) player.ax += SETTINGS.playerAccel;
+
+    player.vx += player.ax * dt;
+    player.vx = clamp(player.vx, -SETTINGS.playerMaxV, SETTINGS.playerMaxV);
+    player.vx *= Math.pow(0.001, dt);
+    player.x += player.vx * dt;
+
+    const margin = 28;
+    player.x = clamp(player.x, margin + player.w/2, innerWidth - margin - player.w/2);
+
+    const catchY = player.y;
+    const catchHalfW = player.w*0.48;
+    const catchHalfH = 22;
+
+    const nextDrops = [];
+    for (const d of drops) {
+      d.y += d.vy * dt;
+      d.rot += 0.9 * dt;
+
+      const sway = Math.sin(time*0.002 + d.driftPhase) * SETTINGS.drift;
+      const dx = (d.x + sway) - player.x;
+      const dy = d.y - catchY;
+
+      const hit = Math.abs(dx) < (catchHalfW) && Math.abs(dy) < catchHalfH;
+
+      if (hit) {
+        score += d.value;
+        hudMid.textContent = `Score: ${Math.min(score, 999)}`;
+        puff(d.x + sway, d.y, d.kind==="note" ? 28 : 20);
+        blip(d.kind==="note" ? 784 : 660, 0.06, d.kind==="note" ? 0.05 : 0.04);
+
+        if (score >= SETTINGS.goal) {
+          win(); return;
+        }
+        continue;
+      }
+
+      if (d.y < innerHeight + 60) nextDrops.push(d);
+    }
+    drops = nextDrops;
+
+    particles = particles.filter(p=>{
+      p.t += dt;
+      p.vy += p.g * dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      return p.t < p.life;
+    });
+
+    confetti = confetti.filter(c=>{
+      c.t += dt;
+      c.vy += c.g * dt;
+      c.x += c.vx * dt;
+      c.y += c.vy * dt;
+      c.r += c.vr * dt;
+      return c.t < c.life;
+    });
+  }
+
+  function render(time) {
+    ctx.clearRect(0,0,innerWidth,innerHeight);
+
+    drawStars(time);
+
+    ctx.save();
+    const band = ctx.createLinearGradient(0, innerHeight*0.15, 0, innerHeight*0.85);
+    band.addColorStop(0, "rgba(238,217,166,.05)");
+    band.addColorStop(0.5, "rgba(255,255,255,0)");
+    band.addColorStop(1, "rgba(140,255,210,.04)");
+    ctx.fillStyle = band;
+    ctx.fillRect(0,0,innerWidth,innerHeight);
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+    ctx.font = "700 16px ui-sans-serif, system-ui";
+    ctx.fillStyle = "rgba(255,255,255,.86)";
+    ctx.fillText("Starlight Catch", 18, 58);
+    ctx.globalAlpha = 0.60;
+    ctx.font = "12px ui-sans-serif, system-ui";
+    ctx.fillText("collect 20 — unlock the envelope", 18, 76);
+    ctx.restore();
+
+    for (const d of drops) drawDrop(d, time);
+
+    drawParticles();
+    drawConfetti();
+    drawPlayer();
+    drawVignette();
+  }
+
+  function loop(t) {
+    if (!running) return;
+    const dt = clamp((t - lastT) / 1000, 0, 0.033);
+    lastT = t;
+
+    if (!paused) update(dt, t);
+    render(t);
+
+    requestAnimationFrame(loop);
+  }
+
+  function startGame() {
+    ensureAudio();
+    overlay.style.display = "none";
+    running = true;
+    paused = false;
+    btnPause.disabled = false;
+    btnRestart.disabled = false;
+    btnPause.textContent = "⏸️ PAUSE";
+    btnStart.textContent = "▶︎ RUNNING";
+    btnStart.disabled = true;
+    lastT = nowMs();
+    spawnAt = nowMs() + 250;
+    requestAnimationFrame(loop);
+  }
+
+  function togglePause() {
+    if (!running) return;
+    paused = !paused;
+    btnPause.textContent = paused ? "▶︎ RESUME" : "⏸️ PAUSE";
+    if (!paused) lastT = nowMs();
+  }
+
+  // =========================
+  // WIN: show envelope (closed)
+  // =========================
+  function win() {
+    paused = true;
+
+    // bring overlay with envelope (closed)
+    title.textContent = `You've got a letter, ${SETTINGS.name}.`;
+    desc.innerHTML =
+      `<span class="k">${SETTINGS.goal}</span> collected — 封筒が届きました。<br>`+
+      `封筒をタップして開いてください。`;
+
+    fp.innerHTML = `↻ RESTART で何回でも遊べます。`;
+    envelopeHint.textContent = "封筒をタップして開封";
+
+    envelope.classList.remove("open");
+    envelope.classList.add("idle");
+
+    // first confetti (subtle)
+    burstConfetti(innerWidth/2, innerHeight*0.35, 120);
+
+    overlay.style.display = "flex";
+    btnCloseOverlay.style.display = "inline-flex";
+    btnStart.disabled = true;
+  }
+
+  // Open envelope on tap (and add a second chime + confetti)
+  let openedOnce = false;
+  envelope.addEventListener("click", ()=>{
+    ensureAudio();
+    if (!overlay || overlay.style.display !== "flex") return;
+
+    envelope.classList.remove("idle");
+    envelope.classList.add("open");
+
+    if (!openedOnce) {
+      openedOnce = true;
+      chime();
+      burstConfetti(innerWidth/2, innerHeight*0.42, 220);
+      setTimeout(()=>burstConfetti(innerWidth/2, innerHeight*0.52, 160), 140);
+      blip(880,0.09,0.05);
+      envelopeHint.textContent = "手紙が開きました";
+    }
+  });
+
+  btnCloseOverlay.addEventListener("click", ()=>{
+    overlay.style.display = "none";
+  });
+
+  // Buttons
+  btnPlay.addEventListener("click", ()=>{
+    openedOnce = false;
+    reset();
+    startGame();
+  });
+  btnStart.addEventListener("click", ()=>{
+    openedOnce = false;
+    reset();
+    startGame();
+  });
+  btnPause.addEventListener("click", ()=>{ togglePause(); });
+
+  btnRestart.addEventListener("click", ()=>{
+    openedOnce = false;
+    reset();
+    if (!running) startGame();
+    else {
+      paused = false;
+      btnPause.textContent="⏸️ PAUSE";
+      overlay.style.display="none";
+    }
+  });
+
+  btnHow.addEventListener("click", ()=>{
+    title.textContent = "How to play";
+    desc.innerHTML =
+      `・光（✦）をキャッチ： <span class="k">+1</span><br>`+
+      `・音符（♪）： <span class="k">+2</span><br>`+
+      `・合計 <span class="k">${SETTINGS.goal}</span> で封筒が届く → タップで開封`;
+    fp.innerHTML = `上の START / はじめる で開始。`;
+    envelopeHint.textContent = "（ゲーム開始前）封筒は演出用です";
+  });
+
+  btnSound.addEventListener("click", ()=>{
+    audioOn = !audioOn;
+    btnSound.textContent = audioOn ? "🔈 SOUND: ON" : "🔇 SOUND: OFF";
+    if (audioOn) ensureAudio();
+  });
+
+  // Initial overlay screen
+  reset();
+})();
+</script>
+</body>
+</html>
