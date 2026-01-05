@@ -420,18 +420,23 @@
 
 <script>
 (() => {
+  try {
   // =========================
   // photosフォルダ内の画像ファイル名リスト（自動取得済み）
   const IMAGE_PATHS = [
     "S__12451857_0.jpg","S__12451858_0.jpg","S__12451859_0.jpg","S__12451860_0.jpg","S__12451861_0.jpg","S__12451862_0.jpg","S__12451863_0.jpg","S__12451864_0.jpg","S__12451865_0.jpg","S__12451867_0.jpg","S__12451868_0.jpg","S__12451869_0.jpg","S__12451870_0.jpg","S__12484624_0.jpg","S__12484625_0.jpg","S__12484626_0.jpg","S__12484627_0.jpg","S__12484628_0.jpg","S__12484629_0.jpg","S__12484630_0.jpg","S__12484631_0.jpg","S__12484632_0.jpg","S__12484633_0.jpg","S__12484635_0.jpg","S__12484636_0.jpg","S__12484637_0.jpg","S__12484638_0.jpg","S__12484639_0.jpg","S__12484640_0.jpg","S__12484641_0.jpg","S__12484642_0.jpg","S__12484643_0.jpg","S__12484644_0.jpg","S__12484646_0.jpg","S__12484647_0.jpg","S__12484648_0.jpg","S__12484649_0.jpg","S__12484650_0.jpg","S__12484651_0.jpg","S__12484652_0.jpg","S__12484653_0.jpg","S__12484654_0.jpg","S__12484655_0.jpg","S__12484657_0.jpg","S__12484658_0.jpg","S__12484659_0.jpg","S__12484660_0.jpg","S__12484661_0.jpg","S__12484662_0.jpg","S__12484663_0.jpg","S__12484664_0.jpg","S__12484665_0.jpg","S__12484666_0.jpg"
   ];
   const IMAGES = [];
+  const imageReadyFlags = new Array(IMAGE_PATHS.length).fill(false);
+  const readyImageIndices = [];
   let imagesLoaded = 0;
+  let startButtonsLocked = IMAGE_PATHS.length > 0;
   for(let i=0;i<IMAGE_PATHS.length;i++){
     const path = `photos/${IMAGE_PATHS[i]}`;
     const img = new window.Image();
     img.src = path;
-    img.onload = ()=>{ imagesLoaded++; };
+    img.onload = ()=>{ onImageAssetReady(i); };
+    img.onerror = ()=>{ onImageAssetError(i); };
     IMAGES.push(img);
   }
   // =========================
@@ -487,6 +492,52 @@
   const letterTo = document.getElementById("letterTo");
   const letterStamp = document.getElementById("letterStamp");
   const letterSig = document.getElementById("letterSig");
+
+  const startButtonLabel = btnStart.textContent;
+  const playButtonLabel = btnPlay.textContent;
+  const baseHint = envelopeHint ? envelopeHint.textContent : "";
+  if (startButtonsLocked) updatePhotoLoadingUI();
+
+  function updatePhotoLoadingUI() {
+    if (!startButtonsLocked) return;
+    const total = IMAGE_PATHS.length;
+    const progress = total ? ` (${Math.min(imagesLoaded, total)}/${total})` : "";
+    const text = `写真読み込み中...${progress}`;
+    btnStart.textContent = text;
+    btnPlay.textContent = text;
+    btnStart.disabled = true;
+    btnPlay.disabled = true;
+    if (envelopeHint) envelopeHint.textContent = text;
+  }
+
+  function unlockPhotoLoadingUI() {
+    if (!startButtonsLocked) return;
+    startButtonsLocked = false;
+    btnStart.disabled = false;
+    btnPlay.disabled = false;
+    btnStart.textContent = startButtonLabel;
+    btnPlay.textContent = playButtonLabel;
+    if (envelopeHint) envelopeHint.textContent = baseHint || "▶︎ はじめる を押してスタート";
+  }
+
+  function onImageAssetReady(idx) {
+    if (!imageReadyFlags[idx]) {
+      imageReadyFlags[idx] = true;
+      readyImageIndices.push(idx);
+    }
+    imagesLoaded++;
+    if (startButtonsLocked) {
+      if (readyImageIndices.length) unlockPhotoLoadingUI();
+      else updatePhotoLoadingUI();
+    }
+  }
+
+  function onImageAssetError(idx) {
+    if (typeof console !== "undefined" && console.warn) {
+      console.warn(`Failed to load photo: ${IMAGE_PATHS[idx]}`);
+    }
+    if (startButtonsLocked) updatePhotoLoadingUI();
+  }
 
   // Apply settings
   who.textContent = SETTINGS.name;
@@ -611,6 +662,7 @@
     player.ax = 0;
     spawnAt = 0;
 
+
     // overlay state
     envelope.classList.remove("open");
     envelope.classList.add("idle");
@@ -619,12 +671,16 @@
 
   function spawnDrop(levelT) {
     const base = lerp(SETTINGS.spawnBaseMs, SETTINGS.spawnMinMs, levelT);
+    if (!readyImageIndices.length) {
+      spawnAt = nowMs() + base + rand(-80, 90);
+      return;
+    }
     // 画像をランダムで選ぶ
-    const imgIdx = Math.floor(rand(0, IMAGES.length));
+    const imgIdx = readyImageIndices[Math.floor(rand(0, readyImageIndices.length))];
     // 画像サイズは元のまま
     const size = rand(32, 54);
-    // 同時に落ちる画像数の上限
-    if (drops.length > 18) return;
+    // 同時に落ちる画像数の上限（多めに）
+    if (drops.length > 40) return;
     drops.push({
       x: rand(26, innerWidth-26),
       y: -40,
@@ -932,7 +988,7 @@
     btnStart.disabled = true;
     lastT = nowMs();
     spawnAt = nowMs() + 250;
-    requestAnimationFrame(loop);
+    setTimeout(()=>requestAnimationFrame(loop), 0);
   }
 
   function togglePause() {
@@ -1034,7 +1090,6 @@
       }, Math.random()*1200);
     }
   }
-  }
 
   // Open envelope on tap (and add a second chime + confetti)
   let openedOnce = false;
@@ -1061,11 +1116,13 @@
 
   // Buttons
   btnPlay.addEventListener("click", ()=>{
+    if (startButtonsLocked) return;
     openedOnce = false;
     reset();
     startGame();
   });
   btnStart.addEventListener("click", ()=>{
+    if (startButtonsLocked) return;
     openedOnce = false;
     reset();
     startGame();
@@ -1101,6 +1158,10 @@
 
   // Initial overlay screen
   reset();
+  } catch (err) {
+    console.error(err);
+    window.__starlightBootError = err && err.stack ? err.stack.toString() : (err && err.message ? err.message.toString() : String(err));
+  }
 })();
 </script>
 </body>
