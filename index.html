@@ -720,7 +720,7 @@
     // 画像サイズは元のまま
     const size = rand(32, 54);
     // 同時に落ちる画像数の上限（多めに）
-    if (drops.length > 18) return;
+    if (drops.length > 12) return;
     const imgEl = IMAGES[imgIdx];
     const naturalW = imgEl.naturalWidth || size*2;
     const naturalH = imgEl.naturalHeight || size*2;
