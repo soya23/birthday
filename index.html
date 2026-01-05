@@ -719,7 +719,7 @@
     // 画像をランダムで選ぶ
     const imgIdx = readyImageIndices[Math.floor(rand(0, readyImageIndices.length))];
     // 画像サイズは元のまま
-    const size = rand(32, 54);
+    const size = rand(36, 62);
     // 同時に落ちる画像数の上限（多めに）
     const maxDrops = compact ? 5 : 8;
     if (drops.length > maxDrops) return;
