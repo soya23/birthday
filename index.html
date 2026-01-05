@@ -474,8 +474,8 @@
     signature: "そうやより",
 
     // difficulty
-    spawnBaseMs: 320, // 画像の出現間隔を短縮
-    spawnMinMs: 420,
+    spawnBaseMs: 480, // 画像の出現間隔を短縮
+    spawnMinMs: 520,
     fallMin: 80,      // px/sec 画像の落下速度を上げる
     fallMax: 140,      // px/sec
     drift: 22,         // 横揺れ少し減らす
@@ -710,7 +710,8 @@
   }
 
   function spawnDrop(levelT) {
-    const base = lerp(SETTINGS.spawnBaseMs, SETTINGS.spawnMinMs, levelT);
+    const compact = innerWidth <= 640;
+    const base = lerp(SETTINGS.spawnBaseMs, SETTINGS.spawnMinMs, levelT) * (compact ? 1.6 : 1);
     if (!readyImageIndices.length) {
       spawnAt = nowMs() + base + rand(-80, 90);
       return;
@@ -720,7 +721,8 @@
     // 画像サイズは元のまま
     const size = rand(32, 54);
     // 同時に落ちる画像数の上限（多めに）
-    if (drops.length > 8) return;
+    const maxDrops = compact ? 5 : 8;
+    if (drops.length > maxDrops) return;
     const imgEl = IMAGES[imgIdx];
     const naturalW = imgEl.naturalWidth || size*2;
     const naturalH = imgEl.naturalHeight || size*2;
