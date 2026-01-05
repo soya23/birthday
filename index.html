@@ -721,10 +721,19 @@
     const size = rand(32, 54);
     // 同時に落ちる画像数の上限（多めに）
     if (drops.length > 40) return;
+    const imgEl = IMAGES[imgIdx];
+    const naturalW = imgEl.naturalWidth || size*2;
+    const naturalH = imgEl.naturalHeight || size*2;
+    const scale = (size*2) / Math.max(naturalW, naturalH);
+    const drawW = naturalW * scale;
+    const drawH = naturalH * scale;
+    const radius = Math.max(drawW, drawH) / 2;
     drops.push({
       x: rand(26, innerWidth-26),
       y: -40,
-      r: size,
+      r: radius,
+      w: drawW,
+      h: drawH,
       vy: rand(SETTINGS.fallMin, SETTINGS.fallMax) * lerp(1.0, 1.12, levelT),
       driftPhase: rand(0, Math.PI*2),
       kind: "image",
@@ -870,7 +879,9 @@
 
     if (d.kind === "image" && IMAGES[d.imgIdx] && IMAGES[d.imgIdx].complete) {
       ctx.globalAlpha = 0.98;
-      ctx.drawImage(IMAGES[d.imgIdx], -d.r, -d.r, d.r*2, d.r*2);
+      const drawW = d.w || d.r*2;
+      const drawH = d.h || d.r*2;
+      ctx.drawImage(IMAGES[d.imgIdx], -drawW/2, -drawH/2, drawW, drawH);
     }
     ctx.restore();
   }
