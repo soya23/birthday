@@ -1,12 +1,7 @@
 ﻿<!doctype html>
 <html lang="ja">
 <head>
-    <script>
-      // どんな場合でも必ずhome.htmlへリダイレクト
-      if (!location.pathname.endsWith('home.html')) {
-        location.replace('home.html');
-      }
-    </script>
+    <!-- リダイレクトスクリプト削除。index.htmlが直接表示されるように修正 -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Uta 20 — Starlight Catch</title>
@@ -426,15 +421,16 @@
 <script>
 (() => {
   // =========================
-  // 画像プリロード
-  // =========================
-  const IMAGE_COUNT = 30; // 画像の枚数
-  const IMAGE_PATHS = Array.from({length: IMAGE_COUNT}, (_,i)=>`images/photo${i+1}.jpg`);
+  // photosフォルダ内の画像ファイル名リスト（自動取得済み）
+  const IMAGE_PATHS = [
+    "S__12451857_0.jpg","S__12451858_0.jpg","S__12451859_0.jpg","S__12451860_0.jpg","S__12451861_0.jpg","S__12451862_0.jpg","S__12451863_0.jpg","S__12451864_0.jpg","S__12451865_0.jpg","S__12451867_0.jpg","S__12451868_0.jpg","S__12451869_0.jpg","S__12451870_0.jpg","S__12484624_0.jpg","S__12484625_0.jpg","S__12484626_0.jpg","S__12484627_0.jpg","S__12484628_0.jpg","S__12484629_0.jpg","S__12484630_0.jpg","S__12484631_0.jpg","S__12484632_0.jpg","S__12484633_0.jpg","S__12484635_0.jpg","S__12484636_0.jpg","S__12484637_0.jpg","S__12484638_0.jpg","S__12484639_0.jpg","S__12484640_0.jpg","S__12484641_0.jpg","S__12484642_0.jpg","S__12484643_0.jpg","S__12484644_0.jpg","S__12484646_0.jpg","S__12484647_0.jpg","S__12484648_0.jpg","S__12484649_0.jpg","S__12484650_0.jpg","S__12484651_0.jpg","S__12484652_0.jpg","S__12484653_0.jpg","S__12484654_0.jpg","S__12484655_0.jpg","S__12484657_0.jpg","S__12484658_0.jpg","S__12484659_0.jpg","S__12484660_0.jpg","S__12484661_0.jpg","S__12484662_0.jpg","S__12484663_0.jpg","S__12484664_0.jpg","S__12484665_0.jpg","S__12484666_0.jpg"
+  ];
   const IMAGES = [];
   let imagesLoaded = 0;
-  for(let i=0;i<IMAGE_COUNT;i++){
+  for(let i=0;i<IMAGE_PATHS.length;i++){
+    const path = `photos/${IMAGE_PATHS[i]}`;
     const img = new window.Image();
-    img.src = IMAGE_PATHS[i];
+    img.src = path;
     img.onload = ()=>{ imagesLoaded++; };
     IMAGES.push(img);
   }
@@ -451,11 +447,11 @@
     signature: "そうやより",
 
     // difficulty
-    spawnBaseMs: 560,
-    spawnMinMs: 360,
-    fallMin: 160,      // px/sec
-    fallMax: 310,      // px/sec
-    drift: 26,
+    spawnBaseMs: 320, // 画像の出現間隔を短縮
+    spawnMinMs: 180,
+    fallMin: 220,      // px/sec 画像の落下速度を上げる
+    fallMax: 420,      // px/sec
+    drift: 22,         // 横揺れ少し減らす
     playerAccel: 2200, // px/sec^2
     playerMaxV: 520,   // px/sec
   };
@@ -625,7 +621,10 @@
     const base = lerp(SETTINGS.spawnBaseMs, SETTINGS.spawnMinMs, levelT);
     // 画像をランダムで選ぶ
     const imgIdx = Math.floor(rand(0, IMAGES.length));
-    const size = rand(32, 54); // 画像サイズ
+    // 画像サイズは元のまま
+    const size = rand(32, 54);
+    // 同時に落ちる画像数の上限
+    if (drops.length > 18) return;
     drops.push({
       x: rand(26, innerWidth-26),
       y: -40,
@@ -950,23 +949,91 @@
     paused = true;
 
     // bring overlay with envelope (closed)
-    title.textContent = `You've got a letter, ${SETTINGS.name}.`;
-    desc.innerHTML =
-      `<span class="k">${SETTINGS.goal}</span> collected — 封筒が届きました。<br>`+
-      `封筒をタップして開いてください。`;
+      // 豪華な祝福演出
+      showBirthdayCelebration();
+    
+      // bring overlay with envelope (closed)
+      title.textContent = `お手紙が届きました、${SETTINGS.name}。`;
+      desc.innerHTML =
+        `<span class="k">${SETTINGS.goal}</span>集めたので封筒が届きました。<br>`+
+        `封筒をタップして開いてください。`;
+    
+      fp.innerHTML = `↻ リスタートで何回でも遊べます。`;
+      envelopeHint.textContent = "封筒をタップして開封";
+    
+      envelope.classList.remove("open");
+      envelope.classList.add("idle");
+    
+      // first confetti (subtle)
+      burstConfetti(innerWidth/2, innerHeight*0.35, 120);
+    
+      overlay.style.display = "flex";
+      btnCloseOverlay.style.display = "inline-flex";
+      btnStart.disabled = true;
+  }
 
-    fp.innerHTML = `↻ RESTART で何回でも遊べます。`;
-    envelopeHint.textContent = "封筒をタップして開封";
+  // 豪華な祝福演出を表示
+  function showBirthdayCelebration() {
+    // すでに表示中なら何もしない
+    if (document.getElementById('bigCongrats')) return;
+    // 画面中央に大きな「20歳おめでとう！」
+    const div = document.createElement('div');
+    div.id = 'bigCongrats';
+    div.textContent = '20歳おめでとう！';
+    div.style.position = 'fixed';
+    div.style.left = '50%';
+    div.style.top = '38%';
+    div.style.transform = 'translate(-50%,-50%) scale(0.7)';
+    div.style.fontSize = 'clamp(36px,8vw,80px)';
+    div.style.fontWeight = '900';
+    div.style.color = '#fff';
+    div.style.textShadow = '0 0 32px #e06c88, 0 2px 0 #f9d423, 0 0 80px #fff';
+    div.style.letterSpacing = '0.1em';
+    div.style.zIndex = '9999';
+    div.style.opacity = '0';
+    div.style.transition = 'opacity 0.7s, transform 0.7s cubic-bezier(.18,.9,.18,1)';
+    document.body.appendChild(div);
+    setTimeout(()=>{
+      div.style.opacity = '1';
+      div.style.transform = 'translate(-50%,-50%) scale(1)';
+    }, 80);
+    setTimeout(()=>{
+      div.style.opacity = '0';
+      div.style.transform = 'translate(-50%,-50%) scale(1.2)';
+      setTimeout(()=>{div.remove();}, 1200);
+    }, 3200);
 
-    envelope.classList.remove("open");
-    envelope.classList.add("idle");
+    // 追加の紙吹雪（カラフル）
+    for(let i=0;i<180;i++){
+      setTimeout(()=>{
+        burstConfetti(
+          innerWidth*Math.random(),
+          innerHeight*0.2 + innerHeight*0.6*Math.random(),
+          1+Math.floor(Math.random()*3)
+        );
+      }, Math.random()*1200);
+    }
 
-    // first confetti (subtle)
-    burstConfetti(innerWidth/2, innerHeight*0.35, 120);
-
-    overlay.style.display = "flex";
-    btnCloseOverlay.style.display = "inline-flex";
-    btnStart.disabled = true;
+    // キラキラ演出
+    for(let i=0;i<30;i++){
+      setTimeout(()=>{
+        const star = document.createElement('div');
+        star.style.position = 'fixed';
+        star.style.left = (10+80*Math.random())+'vw';
+        star.style.top = (10+70*Math.random())+'vh';
+        star.style.width = star.style.height = (18+24*Math.random())+'px';
+        star.style.background = 'radial-gradient(circle,#fff 60%,#f9d423 90%,transparent 100%)';
+        star.style.borderRadius = '50%';
+        star.style.opacity = '0.85';
+        star.style.zIndex = '9999';
+        star.style.pointerEvents = 'none';
+        star.style.filter = 'blur(0.5px)';
+        document.body.appendChild(star);
+        setTimeout(()=>{star.style.opacity='0';}, 1200+Math.random()*1200);
+        setTimeout(()=>{star.remove();}, 2200+Math.random()*1200);
+      }, Math.random()*1200);
+    }
+  }
   }
 
   // Open envelope on tap (and add a second chime + confetti)

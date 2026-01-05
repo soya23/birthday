@@ -113,20 +113,50 @@
 <body>
 <canvas class="confetti"></canvas>
 <div class="main">
-  <div class="title">うたさん 20歳おめでとう！</div>
+  <div class="title">うた 20歳おめでとう！</div>
   <div class="subtitle">たくさんの思い出と感謝をこめて</div>
-  <div style="margin-bottom: 1.5em; display: flex; justify-content: center;">
-    <video src="images/movie1.mp4" controls poster="images/photo1.jpg" style="width:320px; max-width:90vw; border-radius:18px; box-shadow:0 4px 18px #e06c8822;"></video>
-  </div>
+  <div id="gallery" style="position:relative; width:100vw; height:60vh; min-height:340px; margin-bottom:2em;"></div>
   <div class="message">
     この下のボタンからゲームをクリアすると、<br>
-    うたさんへの特別なメッセージが届きます。<br>
+    うたへの特別なメッセージが届きます。<br>
     <span style="display:block;margin-top:1em;color:#e06c88;">ぜひ挑戦してみてください！</span>
   </div>
   <a href="index.html" class="toGameBtn">▶︎ 誕生日ゲームへ</a>
 </div>
-<div class="footer">&copy; 2026 うたさんへのバースデー</div>
+<div class="footer">&copy; 2026 うたへのバースデー</div>
 <script>
+
+// photosフォルダ内の画像ファイル名リスト（自動取得済み）
+const imageFiles = [
+  "S__12451857_0.jpg","S__12451858_0.jpg","S__12451859_0.jpg","S__12451860_0.jpg","S__12451861_0.jpg","S__12451862_0.jpg","S__12451863_0.jpg","S__12451864_0.jpg","S__12451865_0.jpg","S__12451867_0.jpg","S__12451868_0.jpg","S__12451869_0.jpg","S__12451870_0.jpg","S__12484624_0.jpg","S__12484625_0.jpg","S__12484626_0.jpg","S__12484627_0.jpg","S__12484628_0.jpg","S__12484629_0.jpg","S__12484630_0.jpg","S__12484631_0.jpg","S__12484632_0.jpg","S__12484633_0.jpg","S__12484635_0.jpg","S__12484636_0.jpg","S__12484637_0.jpg","S__12484638_0.jpg","S__12484639_0.jpg","S__12484640_0.jpg","S__12484641_0.jpg","S__12484642_0.jpg","S__12484643_0.jpg","S__12484644_0.jpg","S__12484646_0.jpg","S__12484647_0.jpg","S__12484648_0.jpg","S__12484649_0.jpg","S__12484650_0.jpg","S__12484651_0.jpg","S__12484652_0.jpg","S__12484653_0.jpg","S__12484654_0.jpg","S__12484655_0.jpg","S__12484657_0.jpg","S__12484658_0.jpg","S__12484659_0.jpg","S__12484660_0.jpg","S__12484661_0.jpg","S__12484662_0.jpg","S__12484663_0.jpg","S__12484664_0.jpg","S__12484665_0.jpg","S__12484666_0.jpg"
+];
+
+function renderGallery(){
+  const gallery = document.getElementById('gallery');
+  if(!gallery) return;
+  gallery.innerHTML = '';
+  imageFiles.forEach((src,i)=>{
+    const img = document.createElement('img');
+    img.src = `photos/${src}`;
+    img.style.position = 'absolute';
+    img.style.left = (10 + Math.random()*80) + '%';
+    img.style.top = (5 + Math.random()*70) + '%';
+    img.style.width = (120 + Math.random()*80) + 'px';
+    img.style.transform = `rotate(${Math.random()*40-20}deg)`;
+    img.style.borderRadius = '18px';
+    img.style.boxShadow = '0 4px 18px #e06c8822';
+    img.style.border = '3px solid #fff';
+    img.style.opacity = '0.92';
+    img.style.transition = 'transform 0.2s';
+    img.onclick = ()=>{
+      img.style.transform += ' scale(1.5)';
+      setTimeout(()=>{img.style.transform = img.style.transform.replace(' scale(1.5)','');}, 900);
+    };
+    gallery.appendChild(img);
+  });
+}
+renderGallery();
+
 // confetti
 const canvas = document.querySelector('.confetti');
 const ctx = canvas.getContext('2d');
