@@ -143,6 +143,24 @@
       line-height:1.6;
     }
     .k{ color:var(--accent); font-weight:800; }
+    .videoWrap{
+      display:none;
+      margin:14px auto 4px;
+      width:min(620px, 92vw);
+    }
+    .videoWrap video{
+      width:100%;
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow:0 30px 120px rgba(0,0,0,.60);
+      background:rgba(0,0,0,.5);
+    }
+    .videoHint{
+      text-align:center;
+      color:rgba(255,255,255,.72);
+      font-size:12px;
+      margin-top:8px;
+    }
 
     /* =========================
        Envelope / Letter animation
@@ -405,6 +423,10 @@
         </div>
       </div>
       <div class="envelopeHint" id="envelopeHint">▶︎ はじめる を押してスタート</div>
+      <div class="videoWrap" id="videoWrap" aria-hidden="true">
+        <video id="congratsVideo" controls playsinline preload="metadata"></video>
+        <div class="videoHint" id="videoHint">動画を再生してみてください</div>
+      </div>
 
       <div class="row">
         <button id="btnPlay" style="flex:1; min-width:180px;">▶︎ はじめる</button>
@@ -459,6 +481,7 @@
     drift: 22,         // 横揺れ少し減らす
     playerAccel: 2200, // px/sec^2
     playerMaxV: 520,   // px/sec
+    videoSrc: "videos/789316347.718768.mp4",
   };
 
   // DOM
@@ -478,6 +501,10 @@
   const desc = document.getElementById("desc");
   const fp = document.getElementById("fp");
   const envelopeHint = document.getElementById("envelopeHint");
+  const envelopeWrap = document.querySelector(".envelopeWrap");
+  const videoWrap = document.getElementById("videoWrap");
+  const congratsVideo = document.getElementById("congratsVideo");
+  const videoHint = document.getElementById("videoHint");
 
   const btnStart = document.getElementById("btnStart");
   const btnPause = document.getElementById("btnPause");
@@ -496,6 +523,12 @@
   const startButtonLabel = btnStart.textContent;
   const playButtonLabel = btnPlay.textContent;
   const baseHint = envelopeHint ? envelopeHint.textContent : "";
+  const hasVideo = Boolean(SETTINGS.videoSrc && SETTINGS.videoSrc.trim() !== "");
+  if (hasVideo && videoWrap) {
+    videoWrap.style.display = "none";
+    videoWrap.setAttribute("aria-hidden","true");
+    if (congratsVideo) congratsVideo.src = SETTINGS.videoSrc;
+  }
   if (startButtonsLocked) updatePhotoLoadingUI();
 
   function updatePhotoLoadingUI() {
@@ -661,12 +694,19 @@
     player.vx = 0;
     player.ax = 0;
     spawnAt = 0;
-
-
     // overlay state
     envelope.classList.remove("open");
     envelope.classList.add("idle");
     btnCloseOverlay.style.display = "none";
+    if (hasVideo && envelopeWrap) envelopeWrap.style.display = "";
+    if (videoWrap) {
+      videoWrap.style.display = "none";
+      videoWrap.setAttribute("aria-hidden","true");
+    }
+    if (congratsVideo) {
+      congratsVideo.pause();
+      try { congratsVideo.currentTime = 0; } catch {}
+    }
   }
 
   function spawnDrop(levelT) {
@@ -1003,29 +1043,43 @@
   // =========================
   function win() {
     paused = true;
+    showBirthdayCelebration();
 
-    // bring overlay with envelope (closed)
-      // 豪華な祝福演出
-      showBirthdayCelebration();
-    
-      // bring overlay with envelope (closed)
+    if (hasVideo && videoWrap) {
+      title.textContent = `動画が届きました、${SETTINGS.name}。`;
+      desc.innerHTML =
+        `<span class="k">${SETTINGS.goal}</span> 集めてくれてありがとう。<br>`+
+        `下の動画を再生してみてください。`;
+      fp.innerHTML = `↻ RESTART で何度でも動画を見返せます。`;
+      if (videoHint) videoHint.textContent = "▶ を押すと動画が再生されます";
+      if (envelopeHint) envelopeHint.textContent = "";
+      if (envelopeWrap) envelopeWrap.style.display = "none";
+      videoWrap.style.display = "block";
+      videoWrap.setAttribute("aria-hidden","false");
+      if (congratsVideo) {
+        congratsVideo.currentTime = 0;
+        congratsVideo.play().catch(()=>{});
+      }
+    } else {
       title.textContent = `お手紙が届きました、${SETTINGS.name}。`;
       desc.innerHTML =
-        `<span class="k">${SETTINGS.goal}</span>集めたので封筒が届きました。<br>`+
+        `<span class="k">${SETTINGS.goal}</span>に到達しました。<br>`+
         `封筒をタップして開いてください。`;
-    
-      fp.innerHTML = `↻ リスタートで何回でも遊べます。`;
-      envelopeHint.textContent = "封筒をタップして開封";
-    
+      fp.innerHTML = `↻ RESTART で何回でも遊べます。`;
+      if (envelopeHint) envelopeHint.textContent = "封筒をタップして開封";
       envelope.classList.remove("open");
       envelope.classList.add("idle");
-    
-      // first confetti (subtle)
-      burstConfetti(innerWidth/2, innerHeight*0.35, 120);
-    
-      overlay.style.display = "flex";
-      btnCloseOverlay.style.display = "inline-flex";
-      btnStart.disabled = true;
+      if (envelopeWrap) envelopeWrap.style.display = "";
+      if (videoWrap) {
+        videoWrap.style.display = "none";
+        videoWrap.setAttribute("aria-hidden","true");
+      }
+    }
+
+    burstConfetti(innerWidth/2, innerHeight*0.35, 120);
+    overlay.style.display = "flex";
+    btnCloseOverlay.style.display = "inline-flex";
+    btnStart.disabled = true;
   }
 
   // 豪華な祝福演出を表示
